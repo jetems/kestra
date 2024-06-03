@@ -4,6 +4,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.exceptions.InternalException;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.flows.Flow;
+import io.kestra.core.models.flows.FlowWithSource;
 import io.kestra.core.models.triggers.Trigger;
 import io.kestra.plugin.core.trigger.Schedule;
 import io.kestra.core.repositories.FlowRepositoryInterface;
@@ -19,7 +20,9 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
@@ -42,8 +45,8 @@ class FlowGraphTest extends AbstractMemoryRunnerTest {
     private FlowRepositoryInterface flowRepositoryInterface;
 
     @Test
-    void simple() throws IllegalVariableEvaluationException {
-        Flow flow = this.parse("flows/valids/return.yaml");
+    void simple() throws IllegalVariableEvaluationException, IOException {
+        FlowWithSource flow = this.parse("flows/valids/return.yaml");
         FlowGraph flowGraph = GraphUtils.flowGraph(flow, null);
 
         assertThat(flowGraph.getNodes().size(), is(5));
@@ -60,8 +63,8 @@ class FlowGraphTest extends AbstractMemoryRunnerTest {
     }
 
     @Test
-    void sequentialNested() throws InternalException {
-        Flow flow = this.parse("flows/valids/sequential.yaml");
+    void sequentialNested() throws InternalException, IOException {
+        FlowWithSource flow = this.parse("flows/valids/sequential.yaml");
         FlowGraph flowGraph = GraphUtils.flowGraph(flow, null);
 
         assertThat(flowGraph.getNodes().size(), is(19));
@@ -76,8 +79,8 @@ class FlowGraphTest extends AbstractMemoryRunnerTest {
     }
 
     @Test
-    void errors() throws IllegalVariableEvaluationException {
-        Flow flow = this.parse("flows/valids/errors.yaml");
+    void errors() throws IllegalVariableEvaluationException, IOException {
+        FlowWithSource flow = this.parse("flows/valids/errors.yaml");
         FlowGraph flowGraph = GraphUtils.flowGraph(flow, null);
 
         assertThat(flowGraph.getNodes().size(), is(17));
@@ -89,8 +92,8 @@ class FlowGraphTest extends AbstractMemoryRunnerTest {
     }
 
     @Test
-    void parallel() throws IllegalVariableEvaluationException {
-        Flow flow = this.parse("flows/valids/parallel.yaml");
+    void parallel() throws IllegalVariableEvaluationException, IOException {
+        FlowWithSource flow = this.parse("flows/valids/parallel.yaml");
         FlowGraph flowGraph = GraphUtils.flowGraph(flow, null);
 
         assertThat(flowGraph.getNodes().size(), is(12));
@@ -106,8 +109,8 @@ class FlowGraphTest extends AbstractMemoryRunnerTest {
     }
 
     @Test
-    void parallelNested() throws IllegalVariableEvaluationException {
-        Flow flow = this.parse("flows/valids/parallel-nested.yaml");
+    void parallelNested() throws IllegalVariableEvaluationException, IOException {
+        FlowWithSource flow = this.parse("flows/valids/parallel-nested.yaml");
         FlowGraph flowGraph = GraphUtils.flowGraph(flow, null);
 
         assertThat(flowGraph.getNodes().size(), is(19));
@@ -120,8 +123,8 @@ class FlowGraphTest extends AbstractMemoryRunnerTest {
     }
 
     @Test
-    void choice() throws IllegalVariableEvaluationException {
-        Flow flow = this.parse("flows/valids/switch.yaml");
+    void choice() throws IllegalVariableEvaluationException, IOException {
+        FlowWithSource flow = this.parse("flows/valids/switch.yaml");
         FlowGraph flowGraph = GraphUtils.flowGraph(flow, null);
 
         assertThat(flowGraph.getNodes().size(), is(17));
@@ -138,8 +141,8 @@ class FlowGraphTest extends AbstractMemoryRunnerTest {
     }
 
     @Test
-    void each() throws IllegalVariableEvaluationException {
-        Flow flow = this.parse("flows/valids/each-sequential-nested.yaml");
+    void each() throws IllegalVariableEvaluationException, IOException {
+        FlowWithSource flow = this.parse("flows/valids/each-sequential-nested.yaml");
         FlowGraph flowGraph = GraphUtils.flowGraph(flow, null);
 
         assertThat(flowGraph.getNodes().size(), is(13));
@@ -151,8 +154,8 @@ class FlowGraphTest extends AbstractMemoryRunnerTest {
     }
 
     @Test
-    void eachParallel() throws IllegalVariableEvaluationException {
-        Flow flow = this.parse("flows/valids/each-parallel-nested.yaml");
+    void eachParallel() throws IllegalVariableEvaluationException, IOException {
+        FlowWithSource flow = this.parse("flows/valids/each-parallel-nested.yaml");
         FlowGraph flowGraph = GraphUtils.flowGraph(flow, null);
 
         assertThat(flowGraph.getNodes().size(), is(11));
@@ -164,8 +167,8 @@ class FlowGraphTest extends AbstractMemoryRunnerTest {
     }
 
     @Test
-    void allFlowable() throws IllegalVariableEvaluationException {
-        Flow flow = this.parse("flows/valids/all-flowable.yaml");
+    void allFlowable() throws IllegalVariableEvaluationException, IOException {
+        FlowWithSource flow = this.parse("flows/valids/all-flowable.yaml");
         FlowGraph flowGraph = GraphUtils.flowGraph(flow, null);
 
         assertThat(flowGraph.getNodes().size(), is(38));
@@ -174,10 +177,10 @@ class FlowGraphTest extends AbstractMemoryRunnerTest {
     }
 
     @Test
-    void parallelWithExecution() throws TimeoutException, IllegalVariableEvaluationException {
+    void parallelWithExecution() throws TimeoutException, IllegalVariableEvaluationException, IOException {
         Execution execution = runnerUtils.runOne(null, "io.kestra.tests", "parallel");
 
-        Flow flow = this.parse("flows/valids/parallel.yaml");
+        FlowWithSource flow = this.parse("flows/valids/parallel.yaml");
         FlowGraph flowGraph = GraphUtils.flowGraph(flow, execution);
 
         assertThat(flowGraph.getNodes().size(), is(12));
@@ -195,10 +198,10 @@ class FlowGraphTest extends AbstractMemoryRunnerTest {
     }
 
     @Test
-    void eachWithExecution() throws TimeoutException, IllegalVariableEvaluationException {
+    void eachWithExecution() throws TimeoutException, IllegalVariableEvaluationException, IOException {
         Execution execution = runnerUtils.runOne(null, "io.kestra.tests", "each-sequential");
 
-        Flow flow = this.parse("flows/valids/each-sequential.yaml");
+        FlowWithSource flow = this.parse("flows/valids/each-sequential.yaml");
         FlowGraph flowGraph = GraphUtils.flowGraph(flow, execution);
 
         assertThat(flowGraph.getNodes().size(), is(21));
@@ -213,8 +216,8 @@ class FlowGraphTest extends AbstractMemoryRunnerTest {
     }
 
     @Test
-    void trigger() throws IllegalVariableEvaluationException {
-        Flow flow = this.parse("flows/valids/trigger-flow-listener.yaml");
+    void trigger() throws IllegalVariableEvaluationException, IOException {
+        FlowWithSource flow = this.parse("flows/valids/trigger-flow-listener.yaml");
         triggerRepositoryInterface.save(
             Trigger.of(flow, flow.getTriggers().getFirst()).toBuilder().disabled(true).build()
         );
@@ -229,8 +232,8 @@ class FlowGraphTest extends AbstractMemoryRunnerTest {
     }
 
     @Test
-    void multipleTriggers() throws IllegalVariableEvaluationException {
-        Flow flow = this.parse("flows/valids/trigger-flow-listener-no-inputs.yaml");
+    void multipleTriggers() throws IllegalVariableEvaluationException, IOException {
+        FlowWithSource flow = this.parse("flows/valids/trigger-flow-listener-no-inputs.yaml");
         FlowGraph flowGraph = GraphUtils.flowGraph(flow, null);
 
         assertThat(flowGraph.getNodes().size(), is(7));
@@ -239,8 +242,8 @@ class FlowGraphTest extends AbstractMemoryRunnerTest {
     }
 
     @Test
-    void subflow() throws IllegalVariableEvaluationException {
-        Flow flow = this.parse("flows/valids/task-flow.yaml");
+    void subflow() throws IllegalVariableEvaluationException, IOException {
+        FlowWithSource flow = this.parse("flows/valids/task-flow.yaml");
         FlowGraph flowGraph = GraphUtils.flowGraph(flow, null);
 
         assertThat(flowGraph.getNodes().size(), is(6));
@@ -268,13 +271,13 @@ class FlowGraphTest extends AbstractMemoryRunnerTest {
         assertThat(subflowTrigger.getTriggerDeclaration(), instanceOf(Schedule.class));
     }
 
-    private Flow parse(String path) {
+    private FlowWithSource parse(String path) throws IOException {
         URL resource = TestsUtils.class.getClassLoader().getResource(path);
         assert resource != null;
 
         File file = new File(resource.getFile());
 
-        return yamlFlowParser.parse(file, Flow.class);
+        return yamlFlowParser.parse(file, Flow.class).withSource(Files.readString(file.toPath()));
     }
 
     private AbstractGraph node(FlowGraph flowGraph, String taskId) {

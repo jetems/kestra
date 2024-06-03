@@ -10,10 +10,7 @@ import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.executions.ExecutionKilled;
 import io.kestra.core.models.executions.ExecutionKilledExecution;
 import io.kestra.core.models.executions.TaskRun;
-import io.kestra.core.models.flows.Flow;
-import io.kestra.core.models.flows.FlowForExecution;
-import io.kestra.core.models.flows.FlowWithException;
-import io.kestra.core.models.flows.State;
+import io.kestra.core.models.flows.*;
 import io.kestra.core.models.hierarchies.FlowGraph;
 import io.kestra.core.models.storage.FileMetas;
 import io.kestra.core.models.tasks.Task;
@@ -207,7 +204,7 @@ public class ExecutionController {
         return executionRepository
             .findById(tenantService.resolveTenant(), executionId)
             .map(throwFunction(execution -> {
-                Optional<Flow> flow = flowRepository.findByIdWithoutAcl(
+                Optional<FlowWithSource> flow = flowRepository.findByIdWithSourceWithoutAcl(
                     execution.getTenantId(),
                     execution.getNamespace(),
                     execution.getFlowId(),
