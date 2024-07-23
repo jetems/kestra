@@ -103,7 +103,7 @@ public interface FlowRepositoryInterface {
 
     List<Flow> findAll(String tenantId);
 
-    List<Flow> findAllForAllTenants();
+    List<FlowWithSource> findAllForAllTenants();
 
     List<Flow> findByNamespace(String tenantId, String namespace);
 
