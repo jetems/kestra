@@ -12,6 +12,7 @@ import io.kestra.core.models.executions.ExecutionKilled;
 import io.kestra.core.models.executions.ExecutionKilledTrigger;
 import io.kestra.core.models.flows.Flow;
 import io.kestra.core.models.flows.FlowWithException;
+import io.kestra.core.models.flows.FlowWithSource;
 import io.kestra.core.models.flows.State;
 import io.kestra.core.models.triggers.*;
 import io.kestra.plugin.core.trigger.Schedule;
@@ -236,7 +237,7 @@ public abstract class AbstractScheduler implements Scheduler, Service {
     // Initialized local trigger state,
     // and if some flows were created outside the box, for example from the CLI,
     // then we may have some triggers that are not created yet.
-    private void initializedTriggers(List<Flow> flows) {
+    private void initializedTriggers(List<FlowWithSource> flows) {
         record FlowAndTrigger(Flow flow, AbstractTrigger trigger) {
         }
         List<Trigger> triggers = triggerState.findAllForAllTenants();
@@ -311,7 +312,7 @@ public abstract class AbstractScheduler implements Scheduler, Service {
         }
     }
 
-    private List<FlowWithTriggers> computeSchedulable(List<Flow> flows, List<Trigger> triggerContextsToEvaluate, ScheduleContextInterface scheduleContext) {
+    private List<FlowWithTriggers> computeSchedulable(List<FlowWithSource> flows, List<Trigger> triggerContextsToEvaluate, ScheduleContextInterface scheduleContext) {
         List<String> flowToKeep = triggerContextsToEvaluate.stream().map(Trigger::getFlowId).toList();
 
         return flows
@@ -364,10 +365,10 @@ public abstract class AbstractScheduler implements Scheduler, Service {
             .filter(Objects::nonNull).toList();
     }
 
-    abstract public void handleNext(List<Flow> flows, ZonedDateTime now, BiConsumer<List<Trigger>, ScheduleContextInterface> consumer);
+    abstract public void handleNext(List<FlowWithSource> flows, ZonedDateTime now, BiConsumer<List<Trigger>, ScheduleContextInterface> consumer);
 
     public List<FlowWithTriggers> schedulerTriggers() {
-        Map<String, Flow> flows = this.flowListeners.flows()
+        Map<String, FlowWithSource> flows = this.flowListeners.flows()
             .stream()
             .collect(Collectors.toMap(Flow::uidWithoutRevision, Function.identity()));
 
@@ -815,13 +816,13 @@ public abstract class AbstractScheduler implements Scheduler, Service {
     @Getter
     @NoArgsConstructor
     private static class FlowWithWorkerTrigger {
-        private Flow flow;
+        private FlowWithSource flow;
         private AbstractTrigger abstractTrigger;
         private WorkerTriggerInterface workerTrigger;
         private Trigger triggerContext;
         private ConditionContext conditionContext;
 
-        public FlowWithWorkerTrigger from(Flow flow) throws InternalException {
+        public FlowWithWorkerTrigger from(FlowWithSource flow) throws InternalException {
             AbstractTrigger abstractTrigger = flow.getTriggers()
                 .stream()
                 .filter(a -> a.getId().equals(this.abstractTrigger.getId()) && a instanceof WorkerTriggerInterface)
@@ -868,7 +869,7 @@ public abstract class AbstractScheduler implements Scheduler, Service {
     @Getter
     @Builder(toBuilder = true)
     public static class FlowWithTriggers {
-        private final Flow flow;
+        private final FlowWithSource flow;
         private final AbstractTrigger abstractTrigger;
         private final Trigger triggerContext;
         private final RunContext runContext;

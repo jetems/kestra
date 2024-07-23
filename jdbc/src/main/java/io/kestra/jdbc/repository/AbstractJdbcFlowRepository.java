@@ -36,7 +36,7 @@ import java.util.*;
 
 @Slf4j
 public abstract class AbstractJdbcFlowRepository extends AbstractJdbcRepository implements FlowRepositoryInterface {
-    private final QueueInterface<Flow> flowQueue;
+    private final QueueInterface<FlowWithSource> flowQueue;
     private final QueueInterface<Trigger> triggerQueue;
     private final ApplicationEventPublisher<CrudEvent<Flow>> eventPublisher;
     private final ModelValidator modelValidator;
@@ -545,7 +545,7 @@ public abstract class AbstractJdbcFlowRepository extends AbstractJdbcRepository 
 
         this.jdbcRepository.persist(flow, fields);
 
-        flowQueue.emit(flow);
+        flowQueue.emit(flow.withSource(flowSource));
         if (exists.isPresent()) {
             eventPublisher.publishEvent(new CrudEvent<>(flow, exists.get(), crudEventType));
         } else {
@@ -579,11 +579,12 @@ public abstract class AbstractJdbcFlowRepository extends AbstractJdbcRepository 
         Flow deleted = flow.toDeleted();
 
         Map<Field<Object>, Object> fields = this.jdbcRepository.persistFields(deleted);
-        fields.put(field("source_code"), JacksonMapper.ofYaml().writeValueAsString(deleted));
+        String flowSource = JacksonMapper.ofYaml().writeValueAsString(deleted);
+        fields.put(field("source_code"), flowSource);
 
         this.jdbcRepository.persist(deleted, fields);
 
-        flowQueue.emit(deleted);
+        flowQueue.emit(deleted.withSource(flowSource));
 
         eventPublisher.publishEvent(new CrudEvent<>(flow, CrudEventType.DELETE));
 
